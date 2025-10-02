@@ -4,25 +4,27 @@ An mcp hub alternative written in rust.
 
 ## Architecture
 
+```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Neovim Lua Layer                        │
+│                    Neovim Lua Layer                         │
 ├─────────────────────────────────────────────────────────────┤
 │ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ │
 │ │   Autocomplete  │ │   RAG Context   │ │   Code Actions  │ │
 │ │   Interface     │ │   Manager       │ │   Handler       │ │
 │ └─────────────────┘ └─────────────────┘ └─────────────────┘ │
 ├─────────────────────────────────────────────────────────────┤
-│                    FFI/JSON-RPC Bridge                     │
+│                    FFI/JSON-RPC Bridge                      │
 ├─────────────────────────────────────────────────────────────┤
-│                    Rust MCP Client Core                    │
+│                    Rust MCP Client Core                     │
 │ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ │
-│ │   MCP Manager   │ │  Context Cache  │ │ Completion Engine│ │
+│ │   MCP Manager   │ │  Context Cache  │ │ Completion Engine││
 │ │   (rmcp-based)  │ │  (RAG Store)    │ │  (LLM Interface)│ │
 │ └─────────────────┘ └─────────────────┘ └─────────────────┘ │
 ├─────────────────────────────────────────────────────────────┤
-│                   MCP Server Connections                   │
+│                   MCP Server Connections                    │
 │ ┌─────────────────┐ ┌─────────────────┐ ┌─────────────────┐ │
 │ │  Filesystem     │ │      Git        │ │    Language     │ │
 │ │    Server       │ │    Server       │ │     Server      │ │
 │ └─────────────────┘ └─────────────────┘ └─────────────────┘ │
 └─────────────────────────────────────────────────────────────┘
+```
