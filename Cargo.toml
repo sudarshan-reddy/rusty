@@ -1,0 +1,54 @@
+[package]
+name = "rusty"
+version = "0.1.0"
+edition = "2021"
+
+[[bin]]
+name = "rusty"
+path = "src/main.rs"
+
+[lib]
+name = "nvim_mcp_client"
+path = "src/lib.rs"
+
+[dependencies]
+# MCP SDK
+rmcp = { version = "0.2.0", features = ["server", "client", "transport-child-process"] }
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"] }
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Configuration and file handling
+config = "0.14"
+shellexpand = "3.1"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "1.0"
+
+# Logging
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+
+# Utilities
+indexmap = { version = "2.0", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4"] }
+dirs = "5.0"
+regex = "1.0"
+
+# Process management
+which = "6.0"
+
+# Async trait support
+async-trait = "0.1"
+
+# CLI
+clap = { version = "4.0", features = ["derive"] }
+
+[dev-dependencies]
+tempfile = "3.0"
+test-log = "0.2"
