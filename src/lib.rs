@@ -43,13 +43,21 @@
 //! ```
 
 pub mod client;
+pub mod completion;
 pub mod config;
+pub mod providers;
+pub mod server;
 
 pub use client::{
     ConnectionStatus, MCPClient, MCPServerConnection, MCPService, Resource, ResourceContent, Tool,
     ToolResult, ToolResultContent,
 };
+pub use completion::{
+    Completion, CompletionEngine, CompletionProvider, CompletionRequest, CompletionResponse,
+    CompletionSource, Pattern, PatternDetector, Position,
+};
 pub use config::{ConfigLoader, MCPConfig, ServerConfig};
+pub use server::JsonRpcServer;
 
 // Re-export commonly used types
 pub use anyhow::{Error, Result};

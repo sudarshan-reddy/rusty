@@ -1,6 +1,9 @@
-# Rusty 
+# Rusty
 
-An mcp hub alternative written in rust. 
+[![CI](https://github.com/USERNAME/rusty/workflows/CI/badge.svg)](https://github.com/USERNAME/rusty/actions)
+[![codecov](https://codecov.io/gh/USERNAME/rusty/branch/main/graph/badge.svg)](https://codecov.io/gh/USERNAME/rusty)
+
+An MCP (Model Context Protocol) hub alternative written in Rust with Neovim autocomplete integration. 
 
 ## Architecture
 

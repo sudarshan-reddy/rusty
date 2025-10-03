@@ -1,10 +1,6 @@
 use anyhow::{anyhow, Result};
 use indexmap::IndexMap;
-use rmcp::{
-    model::CallToolRequestParam,
-    service::ServiceExt,
-    transport::TokioChildProcess,
-};
+use rmcp::{model::CallToolRequestParam, service::ServiceExt, transport::TokioChildProcess};
 use serde_json::Value;
 use std::collections::HashMap;
 use std::process::Stdio;
@@ -21,7 +17,7 @@ pub struct MCPServerConnection {
     pub status: ConnectionStatus,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub enum ConnectionStatus {
     Disconnected,
     Connecting,
@@ -29,7 +25,7 @@ pub enum ConnectionStatus {
     Failed(String),
 }
 
-/// Trait for abstracting MCP service operations
+/// MCPService is a list of capabilities of this system.
 #[async_trait::async_trait]
 pub trait MCPService: Send + Sync {
     async fn list_tools(&self) -> Result<Vec<Tool>>;
@@ -39,30 +35,27 @@ pub trait MCPService: Send + Sync {
     async fn disconnect(&mut self) -> Result<()>;
 }
 
-/// Tool information
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct Tool {
     pub name: String,
     pub description: Option<String>,
     pub input_schema: Option<Value>,
 }
 
-/// Tool execution result
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct ToolResult {
     pub content: Vec<ToolResultContent>,
     pub is_error: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct ToolResultContent {
     pub content_type: String,
     pub text: Option<String>,
     pub data: Option<Value>,
 }
 
-/// Resource information
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct Resource {
     pub uri: String,
     pub name: String,
@@ -70,8 +63,7 @@ pub struct Resource {
     pub mime_type: Option<String>,
 }
 
-/// Resource content
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize)]
 pub struct ResourceContent {
     pub uri: String,
     pub mime_type: Option<String>,
@@ -86,7 +78,6 @@ pub struct MCPClient {
 }
 
 impl MCPClient {
-    /// Create a new MCP client with the given configuration
     pub fn new(config: MCPConfig) -> Self {
         Self {
             connections: IndexMap::new(),
@@ -94,17 +85,13 @@ impl MCPClient {
         }
     }
 
-    /// Initialize all configured servers
     pub async fn initialize(&mut self) -> Result<()> {
         info!(
             "Initializing MCP client with {} servers",
             self.config.mcp_servers.len()
         );
-
-        // Validate configuration first
         self.config.validate()?;
 
-        // Initialize each enabled server
         for (name, server_config) in self.config.enabled_servers() {
             let connection = MCPServerConnection {
                 name: name.clone(),
@@ -116,14 +103,12 @@ impl MCPClient {
             self.connections.insert(name.clone(), connection);
         }
 
-        // Connect to all servers concurrently
         self.connect_all().await?;
 
         info!("MCP client initialization complete");
         Ok(())
     }
 
-    /// Connect to all configured servers
     pub async fn connect_all(&mut self) -> Result<()> {
         let mut connection_tasks = Vec::new();
 
@@ -142,7 +127,6 @@ impl MCPClient {
             }
         }
 
-        // Wait for all connections to complete
         for (name, task) in connection_tasks {
             match task.await {
                 Ok(Ok(service)) => {
@@ -186,12 +170,10 @@ impl MCPClient {
 
                 let mut cmd = Command::new(command);
 
-                // Add arguments
                 if let Some(args) = args {
                     cmd.args(args);
                 }
 
-                // Set environment variables
                 if let Some(env_vars) = env {
                     for (key, value) in env_vars {
                         cmd.env(key, value);
@@ -380,10 +362,7 @@ impl LocalMCPService {
 #[async_trait::async_trait]
 impl MCPService for LocalMCPService {
     async fn list_tools(&self) -> Result<Vec<Tool>> {
-        let response = self
-            .service
-            .list_tools(None)
-            .await?;
+        let response = self.service.list_tools(None).await?;
 
         let tools = response
             .tools
@@ -414,18 +393,24 @@ impl MCPService for LocalMCPService {
                     rmcp::model::RawContent::Text(text_content) => {
                         ("text".to_string(), Some(text_content.text.clone()), None)
                     }
-                    rmcp::model::RawContent::Image(image_content) => {
-                        ("image".to_string(), None, Some(serde_json::json!({
+                    rmcp::model::RawContent::Image(image_content) => (
+                        "image".to_string(),
+                        None,
+                        Some(serde_json::json!({
                             "data": image_content.data,
                             "mime_type": image_content.mime_type
-                        })))
-                    }
-                    rmcp::model::RawContent::Resource(resource) => {
-                        ("resource".to_string(), None, Some(serde_json::to_value(resource).unwrap_or_default()))
-                    }
-                    rmcp::model::RawContent::Audio(audio) => {
-                        ("audio".to_string(), None, Some(serde_json::to_value(audio).unwrap_or_default()))
-                    }
+                        })),
+                    ),
+                    rmcp::model::RawContent::Resource(resource) => (
+                        "resource".to_string(),
+                        None,
+                        Some(serde_json::to_value(resource).unwrap_or_default()),
+                    ),
+                    rmcp::model::RawContent::Audio(audio) => (
+                        "audio".to_string(),
+                        None,
+                        Some(serde_json::to_value(audio).unwrap_or_default()),
+                    ),
                 };
 
                 ToolResultContent {
@@ -443,10 +428,7 @@ impl MCPService for LocalMCPService {
     }
 
     async fn list_resources(&self) -> Result<Vec<Resource>> {
-        let response = self
-            .service
-            .list_resources(None)
-            .await?;
+        let response = self.service.list_resources(None).await?;
 
         let resources = response
             .resources
@@ -473,8 +455,12 @@ impl MCPService for LocalMCPService {
         // Handle different content types
         let (text, blob) = if let Some(contents) = response.contents.first() {
             match contents {
-                rmcp::model::ResourceContents::TextResourceContents { text, .. } => (Some(text.clone()), None),
-                rmcp::model::ResourceContents::BlobResourceContents { blob, .. } => (None, Some(blob.clone())),
+                rmcp::model::ResourceContents::TextResourceContents { text, .. } => {
+                    (Some(text.clone()), None)
+                }
+                rmcp::model::ResourceContents::BlobResourceContents { blob, .. } => {
+                    (None, Some(blob.clone()))
+                }
             }
         } else {
             (None, None)
@@ -483,8 +469,12 @@ impl MCPService for LocalMCPService {
         Ok(ResourceContent {
             uri: uri.to_string(),
             mime_type: response.contents.first().and_then(|c| match c {
-                rmcp::model::ResourceContents::TextResourceContents { mime_type, .. } => mime_type.clone(),
-                rmcp::model::ResourceContents::BlobResourceContents { mime_type, .. } => mime_type.clone(),
+                rmcp::model::ResourceContents::TextResourceContents { mime_type, .. } => {
+                    mime_type.clone()
+                }
+                rmcp::model::ResourceContents::BlobResourceContents { mime_type, .. } => {
+                    mime_type.clone()
+                }
             }),
             text,
             blob,

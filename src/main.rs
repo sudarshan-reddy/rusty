@@ -5,7 +5,10 @@ use tracing::{info, Level};
 use tracing_subscriber;
 
 // Import from our library crate
-use nvim_mcp_client::{ConfigLoader, ConnectionStatus, MCPClient, MCPConfig};
+use nvim_mcp_client::{
+    CompletionEngine, ConfigLoader, ConnectionStatus, JsonRpcServer, MCPClient, MCPConfig,
+};
+use nvim_mcp_client::providers::StaticPatternProvider;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -27,6 +30,12 @@ async fn main() -> Result<()> {
                 .value_name("LEVEL")
                 .help("Log level (trace, debug, info, warn, error)")
                 .default_value("info"),
+        )
+        .arg(
+            Arg::new("json-rpc")
+                .long("json-rpc")
+                .help("Run in JSON-RPC server mode for Neovim integration")
+                .action(clap::ArgAction::SetTrue),
         )
         .arg(
             Arg::new("create-config")
@@ -111,6 +120,13 @@ async fn main() -> Result<()> {
     if let Some(config_path) = matches.get_one::<String>("create-config") {
         create_sample_config(config_path)?;
         return Ok(());
+    }
+
+    // Check if running in JSON-RPC mode
+    let json_rpc_mode = matches.get_flag("json-rpc");
+
+    if json_rpc_mode {
+        return run_json_rpc_server(&matches).await;
     }
 
     // Load configuration
@@ -438,6 +454,40 @@ fn create_sample_config(path: &str) -> Result<()> {
 
     println!("✅ Sample configuration created at: {}", path);
     println!("Edit the file to configure your MCP servers.");
+
+    Ok(())
+}
+
+async fn run_json_rpc_server(matches: &clap::ArgMatches) -> Result<()> {
+    info!("Starting JSON-RPC server mode");
+
+    // Load MCP configuration (required)
+    let config = if let Some(config_path) = matches.get_one::<String>("config") {
+        ConfigLoader::new().load_from_file(config_path)?
+    } else {
+        ConfigLoader::new().load()?
+    };
+
+    info!("Loaded configuration with {} MCP servers", config.mcp_servers.len());
+
+    // Initialize MCP client
+    let mut mcp_client = MCPClient::new(config);
+    mcp_client.initialize().await?;
+
+    info!("MCP client initialized successfully");
+
+    // Initialize completion engine
+    let mut completion_engine = CompletionEngine::new();
+
+    // Add static pattern provider
+    let static_provider = StaticPatternProvider::new();
+    completion_engine.add_provider(Box::new(static_provider));
+
+    info!("Completion engine ready with static pattern provider");
+
+    // Create and run JSON-RPC server
+    let mut server = JsonRpcServer::new(completion_engine, Some(mcp_client));
+    server.run().await?;
 
     Ok(())
 }
