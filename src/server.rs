@@ -9,8 +9,8 @@ use serde_json::Value;
 use std::io::{self, BufRead, Write};
 use tracing::{debug, error, info, warn};
 
-use crate::completion::{CompletionEngine, CompletionRequest};
 use crate::client::MCPClient;
+use crate::completion::{CompletionEngine, CompletionRequest};
 
 /// JSON-RPC request
 #[derive(Debug, Clone, Deserialize)]
@@ -248,7 +248,9 @@ impl JsonRpcServer {
         let params: CallToolParams = serde_json::from_value(params.clone())?;
 
         if let Some(client) = &self.mcp_client {
-            let result = client.call_tool(&params.server, &params.tool, params.arguments).await?;
+            let result = client
+                .call_tool(&params.server, &params.tool, params.arguments)
+                .await?;
             Ok(serde_json::to_value(result)?)
         } else {
             Err(anyhow!("MCP client not initialized"))

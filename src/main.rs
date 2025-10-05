@@ -5,10 +5,10 @@ use tracing::{info, Level};
 use tracing_subscriber;
 
 // Import from our library crate
+use nvim_mcp_client::providers::StaticPatternProvider;
 use nvim_mcp_client::{
     CompletionEngine, ConfigLoader, ConnectionStatus, JsonRpcServer, MCPClient, MCPConfig,
 };
-use nvim_mcp_client::providers::StaticPatternProvider;
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -468,7 +468,10 @@ async fn run_json_rpc_server(matches: &clap::ArgMatches) -> Result<()> {
         ConfigLoader::new().load()?
     };
 
-    info!("Loaded configuration with {} MCP servers", config.mcp_servers.len());
+    info!(
+        "Loaded configuration with {} MCP servers",
+        config.mcp_servers.len()
+    );
 
     // Initialize MCP client
     let mut mcp_client = MCPClient::new(config);

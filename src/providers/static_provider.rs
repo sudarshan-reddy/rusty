@@ -58,7 +58,10 @@ impl PatternDetector for StaticPatternDetector {
 impl StaticPatternDetector {
     fn detect_rust_pattern(&self, line: &str) -> Pattern {
         // Function definition
-        if Regex::new(r"^\s*(?:pub\s+)?(?:async\s+)?fn\s+\w+").unwrap().is_match(line) {
+        if Regex::new(r"^\s*(?:pub\s+)?(?:async\s+)?fn\s+\w+")
+            .unwrap()
+            .is_match(line)
+        {
             // Check if line doesn't already end with {
             if !line.contains('{') {
                 return Pattern::FunctionStart;
@@ -81,12 +84,20 @@ impl StaticPatternDetector {
         }
 
         // Struct definition
-        if Regex::new(r"^\s*(?:pub\s+)?struct\s+\w+").unwrap().is_match(line) && !line.contains('{') {
+        if Regex::new(r"^\s*(?:pub\s+)?struct\s+\w+")
+            .unwrap()
+            .is_match(line)
+            && !line.contains('{')
+        {
             return Pattern::StructDef;
         }
 
         // Impl block
-        if Regex::new(r"^\s*impl(?:<[^>]+>)?\s+").unwrap().is_match(line) && !line.contains('{') {
+        if Regex::new(r"^\s*impl(?:<[^>]+>)?\s+")
+            .unwrap()
+            .is_match(line)
+            && !line.contains('{')
+        {
             return Pattern::ImplBlock;
         }
 
@@ -100,7 +111,11 @@ impl StaticPatternDetector {
 
     fn detect_python_pattern(&self, line: &str) -> Pattern {
         // Function definition
-        if Regex::new(r"^\s*(?:async\s+)?def\s+\w+").unwrap().is_match(line) && !line.ends_with(':') {
+        if Regex::new(r"^\s*(?:async\s+)?def\s+\w+")
+            .unwrap()
+            .is_match(line)
+            && !line.ends_with(':')
+        {
             return Pattern::FunctionStart;
         }
 
@@ -129,9 +144,11 @@ impl StaticPatternDetector {
 
     fn detect_js_pattern(&self, line: &str) -> Pattern {
         // Function definition
-        if Regex::new(r"^\s*(?:async\s+)?(?:function\s+\w+|const\s+\w+\s*=\s*(?:async\s+)?\([^)]*\)\s*=>)")
-            .unwrap()
-            .is_match(line)
+        if Regex::new(
+            r"^\s*(?:async\s+)?(?:function\s+\w+|const\s+\w+\s*=\s*(?:async\s+)?\([^)]*\)\s*=>)",
+        )
+        .unwrap()
+        .is_match(line)
             && !line.contains('{')
         {
             return Pattern::FunctionStart;

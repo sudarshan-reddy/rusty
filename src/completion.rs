@@ -171,18 +171,16 @@ impl CompletionEngine {
                     all_completions.extend(completions);
                 }
                 Err(e) => {
-                    tracing::warn!(
-                        "Provider '{}' failed: {}",
-                        provider.name(),
-                        e
-                    );
+                    tracing::warn!("Provider '{}' failed: {}", provider.name(), e);
                 }
             }
         }
 
         // Sort by confidence (highest first) and deduplicate
         all_completions.sort_by(|a, b| {
-            b.confidence.partial_cmp(&a.confidence).unwrap_or(std::cmp::Ordering::Equal)
+            b.confidence
+                .partial_cmp(&a.confidence)
+                .unwrap_or(std::cmp::Ordering::Equal)
         });
 
         // Remove duplicates (keep highest confidence)
@@ -209,7 +207,10 @@ mod tests {
 
     #[test]
     fn test_position_serialization() {
-        let pos = Position { line: 10, column: 5 };
+        let pos = Position {
+            line: 10,
+            column: 5,
+        };
         let json = serde_json::to_string(&pos).unwrap();
         assert_eq!(json, r#"{"line":10,"column":5}"#);
     }
